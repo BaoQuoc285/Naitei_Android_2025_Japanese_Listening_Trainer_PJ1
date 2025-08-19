@@ -8,10 +8,14 @@ import android.os.IBinder
 import android.util.Log
 import com.sun.japaneselisteningtrainer.data.model.Audio
 import com.sun.japaneselisteningtrainer.data.repository.AudioRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Manager để UI tương tác với AudioService
@@ -28,6 +32,8 @@ class AudioServiceManager(
     
     private var audioService: AudioService? = null
     private var isBound = false
+    private val managerScope = CoroutineScope(Dispatchers.Main + Job())
+    private var flowCollectionJob: Job? = null
     
     // State flows để UI observe
     private val _isServiceConnected = MutableStateFlow(false)
@@ -53,10 +59,14 @@ class AudioServiceManager(
             audioService = binder.getService()
             isBound = true
             _isServiceConnected.value = true
+            
+            // Start collecting flows from service
+            startFlowCollection()
         }
         
         override fun onServiceDisconnected(name: ComponentName?) {
             Log.d(TAG, "Service disconnected")
+            stopFlowCollection()
             audioService = null
             isBound = false
             _isServiceConnected.value = false
@@ -79,6 +89,7 @@ class AudioServiceManager(
      */
     fun unbindFromService() {
         if (isBound) {
+            stopFlowCollection()
             context.unbindService(serviceConnection)
             isBound = false
             _isServiceConnected.value = false
@@ -95,7 +106,6 @@ class AudioServiceManager(
      */
     fun playAudio(audio: Audio) {
         audioService?.playAudio(audio)
-        updateLocalStates()
     }
     
     /**
@@ -103,7 +113,6 @@ class AudioServiceManager(
      */
     fun playPlaylist(audioList: List<Audio>, startIndex: Int = 0) {
         audioService?.playPlaylist(audioList, startIndex)
-        updateLocalStates()
     }
     
     /**
@@ -111,7 +120,6 @@ class AudioServiceManager(
      */
     fun togglePlayPause() {
         audioService?.togglePlayPause()
-        updateLocalStates()
     }
     
     /**
@@ -119,7 +127,6 @@ class AudioServiceManager(
      */
     fun seekTo(position: Long) {
         audioService?.seekTo(position)
-        updateLocalStates()
     }
     
     /**
@@ -127,7 +134,6 @@ class AudioServiceManager(
      */
     fun nextTrack() {
         audioService?.nextTrack()
-        updateLocalStates()
     }
     
     /**
@@ -135,7 +141,6 @@ class AudioServiceManager(
      */
     fun previousTrack() {
         audioService?.previousTrack()
-        updateLocalStates()
     }
     
     /**
@@ -186,16 +191,37 @@ class AudioServiceManager(
     // ===== Helper Methods =====
     
     /**
-     * Update local state flows from service
+     * Start collecting flows from AudioService để sync states
      */
-    private fun updateLocalStates() {
+    private fun startFlowCollection() {
         audioService?.let { service ->
-            // Manual update - trong thực tế có thể dùng Flow.collect
-            _isPlaying.value = service.isPlaying.value
-            _currentPosition.value = service.currentPosition.value
-            _duration.value = service.duration.value
-            _currentAudio.value = service.currentAudio.value
+            flowCollectionJob?.cancel()
+            flowCollectionJob = managerScope.launch {
+                // Collect tất cả flows từ service để sync states
+                launch {
+                    service.isPlaying.collect { _isPlaying.value = it }
+                }
+                launch {
+                    service.currentPosition.collect { _currentPosition.value = it }
+                }
+                launch {
+                    service.duration.collect { _duration.value = it }
+                }
+                launch {
+                    service.currentAudio.collect { _currentAudio.value = it }
+                }
+            }
+            Log.d(TAG, "Started flow collection from service")
         }
+    }
+    
+    /**
+     * Stop collecting flows
+     */
+    private fun stopFlowCollection() {
+        flowCollectionJob?.cancel()
+        flowCollectionJob = null
+        Log.d(TAG, "Stopped flow collection")
     }
     
     /**
@@ -289,6 +315,8 @@ class AudioServiceManager(
      * Release resources
      */
     fun release() {
+        stopFlowCollection()
+        flowCollectionJob?.cancel()
         unbindFromService()
     }
 }

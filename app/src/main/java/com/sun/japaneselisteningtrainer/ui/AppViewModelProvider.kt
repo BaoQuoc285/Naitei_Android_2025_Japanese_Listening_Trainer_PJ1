@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sun.japaneselisteningtrainer.ui.home.HomeViewModel
 import com.sun.japaneselisteningtrainer.TrainerApplication
 import com.sun.japaneselisteningtrainer.ui.audio.entry.AudioEntryViewModel
+import com.sun.japaneselisteningtrainer.ui.audio.player.MusicPlayerViewModel
 
 /**
  * Provides Factory to create instance of ViewModel for the entire Japanese Listening Trainer app
@@ -42,6 +43,13 @@ object AppViewModelProvider {
         initializer {
             AudioEntryViewModel(
                 trainerApplication().container.audioRepository
+            )
+        }
+        
+        // Initializer for MusicPlayerViewModel
+        initializer {
+            MusicPlayerViewModel(
+                audioServiceManager = trainerApplication().container.audioServiceManager
             )
         }
     }

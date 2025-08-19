@@ -10,6 +10,7 @@ import com.sun.japaneselisteningtrainer.data.repository.local.LocalFolderReposit
 import com.sun.japaneselisteningtrainer.data.repository.mock.MockAudioRepository
 import com.sun.japaneselisteningtrainer.data.storage.AudioFileStorage
 import com.sun.japaneselisteningtrainer.data.storage.ExternalAudioFileStorage
+import com.sun.japaneselisteningtrainer.service.AudioServiceManager
 
 
 /**
@@ -18,6 +19,7 @@ import com.sun.japaneselisteningtrainer.data.storage.ExternalAudioFileStorage
 interface AppContainer {
     val audioRepository: AudioRepository
     val folderRepository: FolderRepository
+    val audioServiceManager: AudioServiceManager
 }
 
 /**
@@ -26,6 +28,10 @@ interface AppContainer {
 class MockAppDataContainer(private val context: Context) : AppContainer {
     override val audioRepository: AudioRepository = MockAudioRepository()
     override val folderRepository: FolderRepository = MockFolderRepository()
+    
+    override val audioServiceManager: AudioServiceManager by lazy {
+        AudioServiceManager(context, audioRepository)
+    }
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -38,5 +44,9 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val folderRepository: FolderRepository by lazy {
         LocalFolderRepository(dbHelper)
+    }
+    
+    override val audioServiceManager: AudioServiceManager by lazy {
+        AudioServiceManager(context, audioRepository)
     }
 }

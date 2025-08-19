@@ -4,6 +4,8 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,15 +17,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sun.japaneselisteningtrainer.R
 import com.sun.japaneselisteningtrainer.TrainerApplication
 import com.sun.japaneselisteningtrainer.data.model.Audio
 import com.sun.japaneselisteningtrainer.service.AudioServiceManager
-import com.sun.japaneselisteningtrainer.service.AudioServiceManagerSingleton
+import com.sun.japaneselisteningtrainer.ui.AppViewModelProvider
 import kotlinx.coroutines.launch
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.AudioProgressBar
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.EditAudioButton
+import com.sun.japaneselisteningtrainer.ui.audio.player.components.FavoriteToggleButton
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.LyricsBox
+import com.sun.japaneselisteningtrainer.ui.audio.player.components.RandomToggleButton
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.RotatingDisc
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.TranscriptContainer
 import com.sun.japaneselisteningtrainer.ui.audio.player.components.TransportBar
@@ -46,44 +52,28 @@ fun MusicPlayerScreen(
     audioId: Int = 1, // ID của audio cần phát
     onNavigationBack: () -> Unit,
     onEditAudio: () -> Unit,
+    musicPlayerViewModel: MusicPlayerViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
-    // Get AudioServiceManager instance với repository
-    val audioServiceManager = remember {
-        AudioServiceManagerSingleton.getInstance(context)
-    }
-    
-    // Observe service states
-    val isServiceConnected by audioServiceManager.isServiceConnected.collectAsState()
-    val isPlaying by audioServiceManager.isPlaying.collectAsState()
-    val currentPosition by audioServiceManager.currentPosition.collectAsState()
-    val duration by audioServiceManager.duration.collectAsState()
-    val currentAudio by audioServiceManager.currentAudio.collectAsState()
-    
-    // Loading state cho audio data
-    var isLoadingAudio by remember { mutableStateOf(true) }
-    var audioLoadError by remember { mutableStateOf<String?>(null) }
+    // Observe ViewModel states
+    val isServiceConnected by musicPlayerViewModel.isServiceConnected.collectAsState()
+    val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
+    val currentPosition by musicPlayerViewModel.currentPosition.collectAsState()
+    val duration by musicPlayerViewModel.duration.collectAsState()
+    val currentAudio by musicPlayerViewModel.currentAudio.collectAsState()
+    val isLoadingAudio by musicPlayerViewModel.isLoadingAudio.collectAsState()
+    val audioLoadError by musicPlayerViewModel.audioLoadError.collectAsState()
     
     // Bind to service when screen opens
     LaunchedEffect(Unit) {
-        audioServiceManager.bindToService()
+        musicPlayerViewModel.bindToService()
     }
     
     // Load audio from database when audioId changes
     LaunchedEffect(audioId, isServiceConnected) {
         if (isServiceConnected) {
-            isLoadingAudio = true
-            audioLoadError = null
-            
-            try {
-                audioServiceManager.loadAndPlayAudio(audioId)
-                isLoadingAudio = false
-            } catch (e: Exception) {
-                audioLoadError = "Không thể load audio: ${e.message}"
-                isLoadingAudio = false
-            }
+            musicPlayerViewModel.loadAndPlayAudio(audioId)
         }
     }
     
@@ -92,14 +82,14 @@ fun MusicPlayerScreen(
         val audio = currentAudio
         if (isPlaying && audio != null) {
             // Chỉ increment một lần khi bắt đầu phát
-            audioServiceManager.incrementListenTimes(audio)
+            musicPlayerViewModel.incrementListenTimes(audio)
         }
     }
     
     // Cleanup when screen closes
     DisposableEffect(Unit) {
         onDispose {
-            audioServiceManager.unbindFromService()
+            musicPlayerViewModel.unbindFromService()
         }
     }
     Scaffold(
@@ -146,9 +136,7 @@ fun MusicPlayerScreen(
                     )
                     Button(
                         onClick = {
-                            scope.launch {
-                                audioServiceManager.loadAndPlayAudio(audioId)
-                            }
+                            musicPlayerViewModel.loadAndPlayAudio(audioId)
                         }
                     ) {
                         Text("Thử lại")
@@ -160,7 +148,7 @@ fun MusicPlayerScreen(
             val audio = currentAudio
             if (audio != null) {
                 PlayerContainer(
-                    audioServiceManager = audioServiceManager,
+                    musicPlayerViewModel = musicPlayerViewModel,
                     isPlaying = isPlaying,
                     currentPosition = currentPosition,
                     duration = duration,
@@ -187,7 +175,7 @@ fun MusicPlayerScreen(
 
 @Composable
 fun PlayerContainer(
-    audioServiceManager: AudioServiceManager,
+    musicPlayerViewModel: MusicPlayerViewModel,
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
@@ -231,7 +219,7 @@ fun PlayerContainer(
                 title = currentAudio.title
             )
             AudioController(
-                audioServiceManager = audioServiceManager,
+                musicPlayerViewModel = musicPlayerViewModel,
                 isPlaying = isPlaying,
                 currentPosition = currentPosition,
                 duration = duration,
@@ -276,7 +264,7 @@ fun AudioTitle(
 
 @Composable
 fun AudioController(
-    audioServiceManager: AudioServiceManager,
+    musicPlayerViewModel: MusicPlayerViewModel,
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
@@ -287,12 +275,12 @@ fun AudioController(
         modifier = modifier,
     ) {
         AudioProgressBar(
-            progress = audioServiceManager.getProgress(),
+            progress = musicPlayerViewModel.getProgress(),
             currentPosition = currentPosition,
             duration = duration,
             onSeek = { progress ->
                 val newPosition = (duration * progress).toLong()
-                audioServiceManager.seekTo(newPosition)
+                musicPlayerViewModel.seekTo(newPosition)
             },
             onSeekFinished = { },
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -300,19 +288,15 @@ fun AudioController(
         Spacer(Modifier.height(8.dp))
         TransportBar(
             isPlaying = isPlaying,
-            isShuffleOn = audioServiceManager.isShuffleEnabled(),
+            isShuffleOn = musicPlayerViewModel.isShuffleEnabled(),
             isFavorite = currentAudio.isFavorite,
-            onToggleShuffle = { audioServiceManager.toggleShuffle() },
-            onPrevious = { audioServiceManager.previousTrack() },
-            onPlayPause = { audioServiceManager.togglePlayPause() },
-            onNext = { audioServiceManager.nextTrack() },
+            onToggleShuffle = { musicPlayerViewModel.toggleShuffle() },
+            onPrevious = { musicPlayerViewModel.previousTrack() },
+            onPlayPause = { musicPlayerViewModel.togglePlayPause() },
+            onNext = { musicPlayerViewModel.nextTrack() },
             onToggleFavorite = { 
                 // Toggle favorite trong database
-                currentAudio?.let { audio ->
-                    scope.launch {
-                        audioServiceManager.toggleFavoriteStatus(audio)
-                    }
-                }
+                musicPlayerViewModel.toggleFavoriteStatus(currentAudio)
             }
         )
     }

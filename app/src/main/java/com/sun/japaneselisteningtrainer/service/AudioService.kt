@@ -111,8 +111,7 @@ class AudioService : Service(), AudioPlayer.AudioPlayerCallback {
         } else {
             stopPositionUpdates()
             // Giữ foreground service nhưng update notification
-            // Foreground service is intentionally kept active when playback stops
-            // to allow quick resumption and maintain notification visibility.
+            // ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
         }
         
         updateNotification()

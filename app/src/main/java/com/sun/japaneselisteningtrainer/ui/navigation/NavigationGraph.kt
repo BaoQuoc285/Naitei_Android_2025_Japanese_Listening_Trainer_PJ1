@@ -78,6 +78,7 @@ fun TrainerNavHost(
     ) {
         composable(route = HomeDestination.route) {
             HomeScreen(
+                navigateToAudioEntry = { navController.navigate(AudioEntryDestination.route) },
                 navigationBar = { TrainerNavigationBar(navController = navController) }
             )
         }
@@ -96,8 +97,10 @@ fun TrainerNavHost(
             arguments = listOf(navArgument(MusicPlayerDestination.audioIdArg) {
                 type = NavType.IntType
             })
-        ){
+        ) { backStackEntry ->
+            val audioId = backStackEntry.arguments?.getInt(MusicPlayerDestination.audioIdArg) ?: 1
             MusicPlayerScreen(
+                audioId = audioId,
                 modifier = Modifier,
                 onNavigationBack = { navController.navigateUp() },
                 onEditAudio = { navController.navigate(AudioEntryDestination.route) }
