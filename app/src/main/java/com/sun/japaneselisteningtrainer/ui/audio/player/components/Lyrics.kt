@@ -119,7 +119,6 @@ fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
 @Composable
 fun TranscriptContainer(
     visible: Boolean,
-    SWIPE_THRESHOLD_PX : Float = 100f,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
