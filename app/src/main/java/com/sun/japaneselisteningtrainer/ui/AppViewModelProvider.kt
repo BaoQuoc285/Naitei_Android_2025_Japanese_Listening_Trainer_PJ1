@@ -45,7 +45,7 @@ object AppViewModelProvider {
                 trainerApplication().container.audioRepository
             )
         }
-        
+
         // Initializer for MusicPlayerViewModel
         initializer {
             MusicPlayerViewModel(

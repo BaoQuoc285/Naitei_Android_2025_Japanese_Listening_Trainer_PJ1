@@ -84,38 +84,3 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
-
-# # Documentation files created during development
-# **/TESTING_GUIDE.md
-# **/INTEGRATION_GUIDE.md
-# **/DATABASE_INTEGRATION_GUIDE.md
-# **/COMPLETE_IMPLEMENTATION_SUMMARY.md
-# **/QuickTestChecklist.kt
-
-# # Test files and assets for development only
-# **/AudioTest.kt
-# **/test_audio.mp3
-# **/sample_*.mp3
-# **/debug_*.kt
-# **/temp_*.kt
-
-# IDE and development specific files
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup

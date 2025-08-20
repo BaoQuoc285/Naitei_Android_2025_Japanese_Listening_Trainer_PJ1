@@ -10,6 +10,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 /* --------------------------------- Icons ---------------------------------- */
 
@@ -40,7 +41,7 @@ fun FavoriteToggleButton(
         Icon(
             imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             contentDescription = "Favorite",
-            tint = if (isFavorite) cs.error else cs.onSurface
+            tint = if (isFavorite) Color.Red else cs.onSurface
         )
     }
 }

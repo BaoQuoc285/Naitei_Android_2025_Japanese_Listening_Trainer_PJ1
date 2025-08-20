@@ -3,6 +3,7 @@ package com.sun.japaneselisteningtrainer
 import android.app.Application
 import com.sun.japaneselisteningtrainer.data.AppContainer
 import com.sun.japaneselisteningtrainer.data.AppDataContainer
+import com.sun.japaneselisteningtrainer.data.MockAppDataContainer
 
 class TrainerApplication : Application() {
     /**

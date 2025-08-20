@@ -27,11 +27,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // ✅ Audio Test
-                    AudioTest()
-
-                    // ✅ COMMENT dòng này khi test
-                    // TrainerApp()
+                    TrainerApp() // Main app with navigation
                 }
             }
         }

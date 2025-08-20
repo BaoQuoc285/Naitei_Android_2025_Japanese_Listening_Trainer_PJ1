@@ -55,37 +55,30 @@ fun MusicPlayerScreen(
     musicPlayerViewModel: MusicPlayerViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val scope = rememberCoroutineScope()
-    
+
     // Observe ViewModel states
     val isServiceConnected by musicPlayerViewModel.isServiceConnected.collectAsState()
     val isPlaying by musicPlayerViewModel.isPlaying.collectAsState()
     val currentPosition by musicPlayerViewModel.currentPosition.collectAsState()
     val duration by musicPlayerViewModel.duration.collectAsState()
-    val currentAudio by musicPlayerViewModel.currentAudio.collectAsState()
+    val currentAudio by musicPlayerViewModel.currentAudioWithOverride.collectAsState()
     val isLoadingAudio by musicPlayerViewModel.isLoadingAudio.collectAsState()
     val audioLoadError by musicPlayerViewModel.audioLoadError.collectAsState()
-    
+
     // Bind to service when screen opens
     LaunchedEffect(Unit) {
         musicPlayerViewModel.bindToService()
     }
-    
+
     // Load audio from database when audioId changes
     LaunchedEffect(audioId, isServiceConnected) {
         if (isServiceConnected) {
             musicPlayerViewModel.loadAndPlayAudio(audioId)
         }
     }
-    
-    // Increment listen times khi bắt đầu phát
-    LaunchedEffect(isPlaying, currentAudio) {
-        val audio = currentAudio
-        if (isPlaying && audio != null) {
-            // Chỉ increment một lần khi bắt đầu phát
-            musicPlayerViewModel.incrementListenTimes(audio)
-        }
-    }
-    
+
+
+
     // Cleanup when screen closes
     DisposableEffect(Unit) {
         onDispose {
@@ -294,7 +287,7 @@ fun AudioController(
             onPrevious = { musicPlayerViewModel.previousTrack() },
             onPlayPause = { musicPlayerViewModel.togglePlayPause() },
             onNext = { musicPlayerViewModel.nextTrack() },
-            onToggleFavorite = { 
+            onToggleFavorite = {
                 // Toggle favorite trong database
                 musicPlayerViewModel.toggleFavoriteStatus(currentAudio)
             }
@@ -304,19 +297,19 @@ fun AudioController(
 
 @Composable
 fun LyricView(
-    modifier: Modifier = Modifier,
-    audio: Audio
+    audio: Audio,
+    modifier: Modifier = Modifier
 ) {
     // Split script thành lines
     val scriptLines = remember(audio.script) {
         audio.script.split("\n").filter { it.isNotBlank() }
     }
-    
+
     LyricsBox(
         lines = scriptLines,
         currentLineIndex = 0, // TODO: Track current line based on playback position
         currentLineProgress = 0f, // TODO: Calculate line progress
-        onSeekToLine = { lineIndex -> 
+        onSeekToLine = { lineIndex ->
             // TODO: Map line index to time position và seek
             // Tạm thời seek về đầu
             // audioServiceManager.seekTo(0L)

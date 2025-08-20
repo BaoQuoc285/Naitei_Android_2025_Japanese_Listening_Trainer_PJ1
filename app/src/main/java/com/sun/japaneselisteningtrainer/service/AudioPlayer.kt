@@ -2,6 +2,7 @@ package com.sun.japaneselisteningtrainer.service
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -15,6 +16,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * Cung cấp state flows cho UI và service
  */
 class AudioPlayer(private val context: Context) {
+    
+    companion object {
+        private const val TAG = "AudioPlayer"
+    }
     
     private val _exoPlayer = ExoPlayer.Builder(context).build()
     private val exoPlayer: ExoPlayer get() = _exoPlayer
@@ -86,23 +91,36 @@ class AudioPlayer(private val context: Context) {
     }
     
     /**
-     * Chuẩn bị audio từ raw resource
+     * Chuẩn bị audio từ file path (hỗ trợ cả raw resource và external file URI)
      */
     fun prepareAudio(audio: Audio) {
         try {
-            // Lấy resource ID từ tên file
-            val resourceId = context.resources.getIdentifier(
-                audio.filePath, 
-                "raw", 
-                context.packageName
-            )
+            Log.d(TAG, "Preparing audio: ${audio.title}, filePath: ${audio.filePath}")
             
-            if (resourceId == 0) {
-                throw Exception("Raw resource '${audio.filePath}' not found")
+            val uri = when {
+                // Nếu filePath là URI (bắt đầu với file:// hoặc content://)
+                audio.filePath.startsWith("file://") || audio.filePath.startsWith("content://") -> {
+                    Log.d(TAG, "Using external file URI: ${audio.filePath}")
+                    Uri.parse(audio.filePath)
+                }
+                // Nếu filePath là raw resource name
+                else -> {
+                    Log.d(TAG, "Using raw resource: ${audio.filePath}")
+                    val resourceId = context.resources.getIdentifier(
+                        audio.filePath, 
+                        "raw", 
+                        context.packageName
+                    )
+                    
+                    if (resourceId == 0) {
+                        throw Exception("Raw resource '${audio.filePath}' not found")
+                    }
+                    
+                    Uri.parse("android.resource://${context.packageName}/$resourceId")
+                }
             }
             
-            // Tạo URI với resource ID
-            val uri = Uri.parse("android.resource://${context.packageName}/$resourceId")
+            Log.d(TAG, "Final URI for ExoPlayer: $uri")
             
             val mediaItem = MediaItem.fromUri(uri)
             exoPlayer.setMediaItem(mediaItem)
@@ -112,7 +130,10 @@ class AudioPlayer(private val context: Context) {
             callback?.onAudioChanged(audio)
             _playbackState.value = AudioServiceConstants.STATE_IDLE
             
+            Log.d(TAG, "Audio prepared successfully")
+            
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to prepare audio: ${e.message}", e)
             _playbackState.value = AudioServiceConstants.STATE_ERROR
             callback?.onError("Không thể tải audio: ${e.message}")
         }

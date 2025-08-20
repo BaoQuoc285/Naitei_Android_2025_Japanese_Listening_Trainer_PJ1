@@ -51,6 +51,7 @@ object HomeDestination : NavigationDestination {
 @Composable
 fun HomeScreen(
     navigateToAudioEntry: () -> Unit,
+    navigateToMusicPlayer: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
     navigationBar: @Composable () -> Unit
@@ -102,7 +103,10 @@ fun HomeScreen(
                 AudioCard(
                     title = audio.title,
                     imageRes = R.drawable.logo,
-                    onClick = { homeViewModel.playAudio(audio) }
+                    onClick = { 
+                        // Navigate to MusicPlayerScreen với audioId
+                        navigateToMusicPlayer(audio.id)
+                    }
                 )
             }
         }

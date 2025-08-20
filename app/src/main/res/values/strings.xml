@@ -3,13 +3,29 @@
     <string name="back_button">Back</string>
     <string name="audio_entry_title">Add Audio</string>
     <string name="home_title">Home</string>
+    <string name="folder_list_title">Folder</string>
+    <string name="percent_string">%1$d%%</string>
+    <string name="create_folder_title">Create Folder</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="title">Title</string>
+    <string name="folder_title_exists">Folder already exists</string>
+    <string name="description">Description</string>
+    <string name="description_placeholder">Optional</string>
+    <string name="folder_deleted">Folder Deleted</string>
+    <string name="undo">Undo</string>
+    <string name="edit_folder_title">Edit Folder</string>
     <string name="track_id">Track 5</string>
-
     <string name="title_activity_test">TestActivity</string>
     <string name="title_activity_main2">MainActivity2</string>
     <string name="audio_player_title">Player</string>
     <string name="select_audio_file">Select audio file</string>
-    <string name="title">Title</string>
     <string name="script">Script</string>
     <string name="add_audio">Add Audio</string>
+    <string name="folder_list_empty_message">Your folder list is empty now</string>
+    <string name="folder_created">Folder Created</string>
+    <string name="folder_edited">Folder Edited</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="max_chars">Max: 1$d chars</string>
 </resources>
