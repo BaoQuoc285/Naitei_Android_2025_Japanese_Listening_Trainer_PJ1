@@ -53,19 +53,7 @@ class MusicPlayerViewModel(
         initialValue = null
     )
     
-    /**
-     * Bind to AudioService
-     */
-    fun bindToService() {
-        audioServiceManager.bindToService()
-    }
-    
-    /**
-     * Unbind from AudioService
-     */
-    fun unbindFromService() {
-        audioServiceManager.unbindFromService()
-    }
+
     
     /**
      * Load and play audio by ID
@@ -138,6 +126,27 @@ class MusicPlayerViewModel(
         return audioServiceManager.getProgress()
     }
     
+
+    
+    /**
+     * Force reload and restart audio (dành cho trường hợp user click vào cùng audio)
+     */
+    fun forceReloadAudio(audioId: Int) {
+        viewModelScope.launch {
+            _isLoadingAudio.value = true
+            _audioLoadError.value = null
+            
+            try {
+                // Force reload audio từ database và restart từ đầu
+                audioServiceManager.loadAndPlayAudio(audioId, forceReload = true)
+                _isLoadingAudio.value = false
+            } catch (e: Exception) {
+                _audioLoadError.value = "Không thể load audio: ${e.message}"
+                _isLoadingAudio.value = false
+            }
+        }
+    }
+    
     /**
      * Toggle favorite status
      */
@@ -146,8 +155,18 @@ class MusicPlayerViewModel(
             // Immediately update UI
             _localFavoriteOverride.value = Pair(audio.id, !audio.isFavorite)
             
-            // Then update database
-            audioServiceManager.toggleFavoriteStatus(audio)
+            try {
+                // Then update database và service state
+                audioServiceManager.toggleFavoriteStatus(audio)
+                
+                // Clear override sau khi update thành công
+                // AudioServiceManager đã update _currentAudio
+                kotlinx.coroutines.delay(100) // Delay ngắn để đảm bảo service state updated
+                _localFavoriteOverride.value = null
+            } catch (e: Exception) {
+                // Nếu database update fail, revert UI
+                _localFavoriteOverride.value = null
+            }
         }
     }
     
@@ -155,7 +174,7 @@ class MusicPlayerViewModel(
     
     override fun onCleared() {
         super.onCleared()
-        // Clean up when ViewModel is destroyed
-        audioServiceManager.unbindFromService()
+        // NOTE: Không unbind service ở đây để giữ nhạc phát khi navigate
+        // Service sẽ được unbind khi app thực sự tắt
     }
 }

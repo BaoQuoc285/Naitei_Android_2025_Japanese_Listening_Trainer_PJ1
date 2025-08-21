@@ -11,10 +11,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Wrapper cho ExoPlayer để quản lý audio playback
- * Cung cấp state flows cho UI và service
- */
 class AudioPlayer(private val context: Context) {
     
     companion object {
@@ -29,17 +25,12 @@ class AudioPlayer(private val context: Context) {
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     
     private val _currentPosition = MutableStateFlow(0L)
-    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
-    
     private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
-    
+
     private val _currentAudio = MutableStateFlow<Audio?>(null)
-    val currentAudio: StateFlow<Audio?> = _currentAudio.asStateFlow()
-    
+
     private val _playbackState = MutableStateFlow(AudioServiceConstants.STATE_IDLE)
-    val playbackState: StateFlow<Int> = _playbackState.asStateFlow()
-    
+
     // Callback interface
     interface AudioPlayerCallback {
         fun onPlaybackStateChanged(isPlaying: Boolean)
@@ -53,10 +44,7 @@ class AudioPlayer(private val context: Context) {
     init {
         setupPlayerListener()
     }
-    
-    /**
-     * Thiết lập listener cho ExoPlayer
-     */
+
     private fun setupPlayerListener() {
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -82,17 +70,11 @@ class AudioPlayer(private val context: Context) {
             }
         })
     }
-    
-    /**
-     * Thiết lập callback
-     */
+
     fun setCallback(callback: AudioPlayerCallback) {
         this.callback = callback
     }
-    
-    /**
-     * Chuẩn bị audio từ file path (hỗ trợ cả raw resource và external file URI)
-     */
+
     fun prepareAudio(audio: Audio) {
         try {
             Log.d(TAG, "Preparing audio: ${audio.title}, filePath: ${audio.filePath}")
@@ -138,72 +120,32 @@ class AudioPlayer(private val context: Context) {
             callback?.onError("Không thể tải audio: ${e.message}")
         }
     }
-    
-    /**
-     * Phát audio
-     */
+
     fun play() {
         exoPlayer.playWhenReady = true
         exoPlayer.play()
     }
-    
-    /**
-     * Tạm dừng audio
-     */
+
     fun pause() {
         exoPlayer.pause()
     }
-    
-    /**
-     * Dừng audio
-     */
+
     fun stop() {
         exoPlayer.stop()
         _playbackState.value = AudioServiceConstants.STATE_STOPPED
     }
-    
-    /**
-     * Seek đến vị trí cụ thể (milliseconds)
-     */
+
     fun seekTo(position: Long) {
         exoPlayer.seekTo(position)
         updatePosition()
     }
-    
-    /**
-     * Tiến tới 10 giây
-     */
-    fun seekForward() {
-        val newPosition = (exoPlayer.currentPosition + 10000).coerceAtMost(exoPlayer.duration)
-        seekTo(newPosition)
-    }
-    
-    /**
-     * Lùi lại 10 giây
-     */
-    fun seekBackward() {
-        val newPosition = (exoPlayer.currentPosition - 10000).coerceAtLeast(0)
-        seekTo(newPosition)
-    }
-    
-    /**
-     * Kiểm tra trạng thái đang phát
-     */
+
     fun isCurrentlyPlaying(): Boolean = exoPlayer.isPlaying
-    
-    /**
-     * Lấy vị trí hiện tại
-     */
+
     fun getCurrentPosition(): Long = exoPlayer.currentPosition
-    
-    /**
-     * Lấy thời lượng total
-     */
+
     fun getDuration(): Long = exoPlayer.duration.takeIf { it > 0 } ?: 0L
-    
-    /**
-     * Cập nhật trạng thái playback
-     */
+
     private fun updatePlaybackState(state: Int) {
         when (state) {
             Player.STATE_IDLE -> _playbackState.value = AudioServiceConstants.STATE_IDLE
@@ -224,10 +166,7 @@ class AudioPlayer(private val context: Context) {
             }
         }
     }
-    
-    /**
-     * Cập nhật vị trí phát
-     */
+
     private fun updatePosition() {
         val position = getCurrentPosition()
         val duration = getDuration()
@@ -237,10 +176,7 @@ class AudioPlayer(private val context: Context) {
         
         callback?.onPositionChanged(position, duration)
     }
-    
-    /**
-     * Giải phóng resources
-     */
+
     fun release() {
         exoPlayer.release()
         callback = null

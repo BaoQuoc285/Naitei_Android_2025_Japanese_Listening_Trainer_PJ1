@@ -190,7 +190,7 @@ class AudioServiceManager(
     /**
      * Load audio from database and play
      */
-    suspend fun loadAndPlayAudio(audioId: Int) {
+    suspend fun loadAndPlayAudio(audioId: Int, forceReload: Boolean = false) {
         try {
             Log.d(TAG, "Loading audio with ID: $audioId")
             
@@ -204,10 +204,22 @@ class AudioServiceManager(
             
             if (audio != null) {
                 Log.d(TAG, "Playing audio: ${audio.title}")
-                playAudio(audio)
                 
-                // Increment listen times chỉ khi là audio mới (không phải reload cùng audio)
-                if (lastPlayedAudioId != audio.id) {
+                // Load toàn bộ playlist để hỗ trợ next/previous
+                val allAudios = withTimeoutOrNull(5.seconds) {
+                    audioRepository.getAllAudioStream().first()
+                } ?: emptyList()
+                
+                if (allAudios.isNotEmpty()) {
+                    val startIndex = allAudios.indexOfFirst { it.id == audioId }.takeIf { it >= 0 } ?: 0
+                    playPlaylist(allAudios, startIndex)
+                } else {
+                    // Fallback: chỉ phát audio đơn lẻ nếu không có playlist
+                    playAudio(audio)
+                }
+                
+                // Increment listen times chỉ khi là audio mới hoặc force reload
+                if (forceReload || lastPlayedAudioId != audio.id) {
                     incrementListenTimes(audio)
                     lastPlayedAudioId = audio.id
                 }
@@ -223,31 +235,7 @@ class AudioServiceManager(
         }
     }
 
-    /**
-     * Load and play playlist from folder
-     */
-    suspend fun loadAndPlayPlaylist(folderId: Int? = null, startAudioId: Int? = null) {
-        try {
-            val audios = if (folderId != null) {
-                audioRepository.getAllAudioStream().first().filter { it.folderId == folderId }
-            } else {
-                audioRepository.getAllAudioStream().first()
-            }
 
-            if (audios.isNotEmpty()) {
-                val startIndex = startAudioId?.let { id ->
-                    audios.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: 0
-                } ?: 0
-
-                playPlaylist(audios, startIndex)
-            } else {
-                throw Exception("No audios found")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load playlist: ${e.message}")
-            throw e
-        }
-    }
 
     /**
      * Toggle favorite status and update database
@@ -256,6 +244,12 @@ class AudioServiceManager(
         try {
             val updatedAudio = audio.copy(isFavorite = !audio.isFavorite)
             audioRepository.update(updatedAudio)
+            
+            // Update currentAudio state để UI sync
+            if (_currentAudio.value?.id == audio.id) {
+                _currentAudio.value = updatedAudio
+            }
+            
             Log.d(TAG, "Toggled favorite for: ${audio.title}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to toggle favorite: ${e.message}")
@@ -277,32 +271,5 @@ class AudioServiceManager(
         }
     }
 
-    // ============ UTILITY METHODS ============
 
-    /**
-     * Check if currently playing
-     */
-    fun isCurrentlyPlaying(): Boolean = _isPlaying.value
-
-    /**
-     * Get current audio info
-     */
-    fun getCurrentAudio(): Audio? = _currentAudio.value
-
-    /**
-     * Format time in MM:SS format
-     */
-    fun formatTime(milliseconds: Long): String {
-        val totalSeconds = milliseconds / 1000
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return String.format("%02d:%02d", minutes, seconds)
-    }
-
-    /**
-     * Release all resources
-     */
-    fun release() {
-        unbindFromService()
-    }
 }

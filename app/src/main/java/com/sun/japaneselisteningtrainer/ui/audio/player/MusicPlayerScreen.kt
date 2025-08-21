@@ -3,6 +3,7 @@ package com.sun.japaneselisteningtrainer.ui.audio.player
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import com.sun.japaneselisteningtrainer.TrainerTopAppBar
 import androidx.compose.ui.res.dimensionResource
@@ -65,26 +67,28 @@ fun MusicPlayerScreen(
     val isLoadingAudio by musicPlayerViewModel.isLoadingAudio.collectAsState()
     val audioLoadError by musicPlayerViewModel.audioLoadError.collectAsState()
 
-    // Bind to service when screen opens
-    LaunchedEffect(Unit) {
-        musicPlayerViewModel.bindToService()
-    }
+    // Service đã được bind trong MainActivity.onCreate()
+    // Không cần bind lại ở đây
 
-    // Load audio from database when audioId changes
+    // Load audio from database only khi cần thiết
     LaunchedEffect(audioId, isServiceConnected) {
         if (isServiceConnected) {
-            musicPlayerViewModel.loadAndPlayAudio(audioId)
+            val currentAudio = musicPlayerViewModel.currentAudio.value
+            
+            // Chỉ load audio mới khi:
+            // 1. Không có audio nào đang được load
+            // 2. AudioId khác với audio hiện tại (thực sự là audio mới)
+            if (currentAudio == null || currentAudio.id != audioId) {
+                musicPlayerViewModel.loadAndPlayAudio(audioId)
+            }
+            // Nếu cùng audio đang phát, không làm gì (để nhạc tiếp tục phát)
         }
     }
 
 
 
-    // Cleanup when screen closes
-    DisposableEffect(Unit) {
-        onDispose {
-            musicPlayerViewModel.unbindFromService()
-        }
-    }
+    // NOTE: Không unbind service khi back để nhạc tiếp tục phát cho mini player
+    // Service sẽ được unbind trong ViewModel.onCleared() hoặc khi app tắt hoàn toàn
     Scaffold(
         topBar = {
             TrainerTopAppBar(
@@ -146,6 +150,7 @@ fun MusicPlayerScreen(
                     currentPosition = currentPosition,
                     duration = duration,
                     currentAudio = audio,
+                    audioId = audioId,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(inner)
@@ -173,6 +178,7 @@ fun PlayerContainer(
     currentPosition: Long,
     duration: Long,
     currentAudio: Audio,
+    audioId: Int,
     modifier: Modifier = Modifier
 ) {
     var isTranscriptVisible by remember { mutableStateOf(false) }
@@ -199,7 +205,11 @@ fun PlayerContainer(
                     modifier = Modifier
                         .padding(30.dp, 0.dp, 30.dp, 30.dp)
                         .fillMaxWidth(),
-                    isPlaying = isPlaying
+                    isPlaying = isPlaying,
+                    onDoubleClick = { 
+                        // Double-tap để restart audio từ đầu (force reload)
+                        musicPlayerViewModel.forceReloadAudio(audioId) 
+                    }
                 )
             } else {
                 LyricView(
@@ -226,10 +236,16 @@ fun PlayerContainer(
 @Composable
 fun RotatingDiscBox(
     modifier: Modifier,
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    onDoubleClick: () -> Unit = {}
 ) {
     Box(
-        modifier = modifier,
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = { onDoubleClick() }
+                )
+            },
         contentAlignment = Alignment.BottomCenter
     ) {
         RotatingDisc(

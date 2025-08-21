@@ -9,15 +9,10 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat as MediaNotificationCompat
-import androidx.media3.common.Player
 import com.sun.japaneselisteningtrainer.MainActivity
 import com.sun.japaneselisteningtrainer.R
 import com.sun.japaneselisteningtrainer.data.model.Audio
 
-/**
- * Quản lý notification cho audio playback
- * Hiển thị thông tin bài hát và controls trên notification
- */
 class AudioNotificationManager(private val context: Context) {
     
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -25,10 +20,7 @@ class AudioNotificationManager(private val context: Context) {
     init {
         createNotificationChannel()
     }
-    
-    /**
-     * Tạo notification channel
-     */
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -43,10 +35,7 @@ class AudioNotificationManager(private val context: Context) {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
-    /**
-     * Tạo notification cho audio playback
-     */
+
     fun createNotification(
         audio: Audio,
         isPlaying: Boolean,
@@ -80,10 +69,7 @@ class AudioNotificationManager(private val context: Context) {
             )
             .build()
     }
-    
-    /**
-     * Tạo action Previous
-     */
+
     private fun createPreviousAction(): NotificationCompat.Action {
         val intent = Intent(context, AudioService::class.java).apply {
             action = AudioServiceConstants.ACTION_PREVIOUS
@@ -98,10 +84,7 @@ class AudioNotificationManager(private val context: Context) {
             pendingIntent
         )
     }
-    
-    /**
-     * Tạo action Play/Pause
-     */
+
     private fun createPlayPauseAction(isPlaying: Boolean): NotificationCompat.Action {
         val action = if (isPlaying) {
             AudioServiceConstants.ACTION_PAUSE
@@ -127,10 +110,7 @@ class AudioNotificationManager(private val context: Context) {
         
         return NotificationCompat.Action(iconRes, title, pendingIntent)
     }
-    
-    /**
-     * Tạo action Next
-     */
+
     private fun createNextAction(): NotificationCompat.Action {
         val intent = Intent(context, AudioService::class.java).apply {
             action = AudioServiceConstants.ACTION_NEXT
@@ -145,17 +125,11 @@ class AudioNotificationManager(private val context: Context) {
             pendingIntent
         )
     }
-    
-    /**
-     * Cập nhật notification hiện tại
-     */
+
     fun updateNotification(notification: Notification) {
         notificationManager.notify(AudioServiceConstants.NOTIFICATION_ID, notification)
     }
-    
-    /**
-     * Hủy notification
-     */
+
     fun cancelNotification() {
         notificationManager.cancel(AudioServiceConstants.NOTIFICATION_ID)
     }

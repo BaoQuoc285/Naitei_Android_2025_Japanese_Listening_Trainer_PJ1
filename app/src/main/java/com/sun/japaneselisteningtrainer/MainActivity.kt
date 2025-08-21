@@ -21,6 +21,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Bind to AudioService khi app khởi động
+        val appContainer = (application as TrainerApplication).container
+        appContainer.audioServiceManager.bindToService()
+        
         setContent {
             JapaneseListeningTrainerTheme {
                 Surface(
@@ -30,6 +35,15 @@ class MainActivity : ComponentActivity() {
                     TrainerApp() // Main app with navigation
                 }
             }
+        }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unbind service khi app thực sự tắt
+        if (isFinishing) {
+            val appContainer = (application as TrainerApplication).container
+            appContainer.audioServiceManager.unbindFromService()
         }
     }
 }
