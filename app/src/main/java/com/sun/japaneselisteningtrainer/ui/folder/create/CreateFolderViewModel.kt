@@ -12,7 +12,6 @@ import com.sun.japaneselisteningtrainer.ui.folder.components.FolderFormDialog.Fo
 import com.sun.japaneselisteningtrainer.ui.folder.components.FolderFormDialog.toFolder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.nio.file.Files.exists
 
 class CreateFolderViewModel(val folderRepository: FolderRepository) : ViewModel() {
     var uiState by mutableStateOf(FolderFormUiState())
