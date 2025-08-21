@@ -84,3 +84,23 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# Documentation files generated during development (exclude from Git)
+**/INTEGRATION_GUIDE.md
+**/DATABASE_INTEGRATION_GUIDE.md
+**/TESTING_GUIDE.md
+**/COMPLETE_IMPLEMENTATION_SUMMARY.md
+**/AUDIO_SERVICE_GUIDE.md
+**/AUDIO_SERVICE_API.md
+**/AUDIO_SERVICE_TEST_CHECKLIST.md
+**/QuickTestChecklist.kt
+**/TestAudioUrls.kt
+**/TestAudioPlayerIntegration.kt
+**/SimpleAudioTest.kt
+**/DebugAudioTest.kt
+**/QuickBuildTest.kt
+DEBUG_COMMANDS.md
+QUICK_START_GUIDE.md
+
+# Keep main README.md but ignore other temporary guides
+# README.md - this stays in Git
