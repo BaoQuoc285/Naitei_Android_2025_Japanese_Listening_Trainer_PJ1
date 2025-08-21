@@ -11,7 +11,6 @@ import com.sun.japaneselisteningtrainer.data.model.Folder
 import com.sun.japaneselisteningtrainer.ui.AppViewModelProvider
 import com.sun.japaneselisteningtrainer.ui.folder.components.FolderFormDialog.FolderFormDialog
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 @Composable
 fun EditFolderDialog(
